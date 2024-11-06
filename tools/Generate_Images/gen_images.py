@@ -76,7 +76,7 @@ for fpathe,dirs,fs in os.walk('./ComplianceChars'):
 
                     outputbase = gt_file.replace('.gt.txt', '')
                     command = f'text2image --font="{FONT_MAPPINT[TARGET_FONT]}" --text={gt_file} --outputbase={outputbase} --max_pages=1 --strip_unrenderable_words --leading=32 --xsize=3600 --ysize=480 --char_spacing=1.0 --exposure=0 --unicharset_file={unicharset_path} --fonts_dir={fonts_folder} --fontconfig_tmpdir={fonts_folder}'
-                    print(command)
+                    #print(command)
                     try:
                         result = subprocess.run(command, shell=True, capture_output=True, text=True)
                         print(result.stdout, result.stderr)
