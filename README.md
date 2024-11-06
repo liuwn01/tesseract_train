@@ -40,40 +40,38 @@ https://github.com/tesseract-ocr/tesseract.git
     conda remove -n tesstrain --all -y
     conda create -n tesstrain python=3.9 -y
     conda activate tesstrain
-    pip install -r ~/tesseract_tutorial/tesstrain/requirements.txt
+    pip install -r ~/tesseract_train/tesstrain/requirements.txt
 
 2. Init dev envirement
-    git clone --recursive https://github.com/liuwn01/tesseract_tutorial
-    #git clone --recursive https://github.com/astutejoe/tesseract_tutorial.git
-        #git submodule update --init  --recursive
+    git clone --recursive https://github.com/liuwn01/tesseract_train.git
 
     or
 
-    mkdir ~/tesseract_tutorial
-    cd ~/tesseract_tutorial
+    mkdir ~/tesseract_train
+    cd ~/tesseract_train
     git clone https://github.com/tesseract-ocr/tesseract.git
     git clone https://github.com/tesseract-ocr/tesstrain
 
 
 3. Prepare data for train
 
-    cd ~/tesseract_tutorial
+    cd ~/tesseract_train
     #从这个[tessdata_best](https://github.com/tesseract-ocr/tessdata_best)中下载对应语言的traineddata, 本测试使用eng.traineddata
-    #把eng.traineddata文件放到~/tesseract_tutorial/tesseract/tessdata目录下
+    #把eng.traineddata文件放到~/tesseract_train/tesseract/tessdata目录下
 
     #TBD, how to generate training data
 
 4. Train model
-    cd ~/tesseract_tutorial/tesstrain
+    cd ~/tesseract_train/tesstrain
     TESSDATA_PREFIX=../tesseract/tessdata make training MODEL_NAME=GB18030 START_MODEL=eng TESSDATA=../tesseract/tessdata MAX_ITERATIONS=10000
 
 
 
 Others:
     #text2image --font=Apex Bold --text=./tesstrain/data/Apex-ground-truth\eng_97.gt.txt --outputbase=./tesstrain/data/Apex-ground-truth/eng_97 --max_pages=1 --strip_unrenderable_words --leading=32 --xsize=3600 --ysize=480 --char_spacing=1.0 --exposure=0 --unicharset_file=langdata/eng.unicharset --fonts_dir=./fonts --fontconfig_tmpdir=D:\09.Work\65.Interop\04.task\30.GBTasks\codes\tesseract_tutorial\tmp
-    #text2image --fonts_dir /home/liuwn/tesseract_tutorial/fonts --list_available_fonts --fontconfig_tmpdir /home/liuwn/tesseract_tutorial/fonts
+    #text2image --fonts_dir /home/liuwn/tesseract_train/fonts --list_available_fonts --fontconfig_tmpdir /home/liuwn/tesseract_train/fonts
     
-    cd ~/tesseract_tutorial/tesstrain
+    cd ~/tesseract_train/tesstrain
     TESSDATA_PREFIX=../tesseract/tessdata make training MODEL_NAME=GB18030 START_MODEL=eng TESSDATA=../tesseract/tessdata MAX_ITERATIONS=10000
     #错误率参考: BCER train=61.069000%
     
