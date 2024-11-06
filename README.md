@@ -1,14 +1,17 @@
 # tesseract_train
 Repository mentioned in https://youtu.be/KE4xEzFGSU8
 
-https://github.com/tesseract-ocr/tessdata_best
-https://github.com/tesseract-ocr/tesstrain
-https://github.com/tesseract-ocr/tessdoc
-https://github.com/tesseract-ocr/langdata_lstm
-https://github.com/tesseract-ocr/tesseract.git
+
 
 ##ubuntu 18/24 简中
 ```
+Releted Repos:
+    https://github.com/tesseract-ocr/tessdata_best 
+    https://github.com/tesseract-ocr/tesstrain
+    https://github.com/tesseract-ocr/tessdoc
+    https://github.com/tesseract-ocr/langdata_lstm
+    https://github.com/tesseract-ocr/tesseract.git
+
 1. Init Ubuntu18/Ubuntu24
 
     sudo apt-get install libicu-dev libpango1.0-dev libcairo2-dev -y
@@ -47,10 +50,14 @@ https://github.com/tesseract-ocr/tesseract.git
 
     or
 
-    mkdir ~/tesseract_train
-    cd ~/tesseract_train
-    git clone https://github.com/tesseract-ocr/tesseract.git
-    git clone https://github.com/tesseract-ocr/tesstrain
+        mkdir ~/tesseract_train
+        cd ~/tesseract_train
+        git clone https://github.com/tesseract-ocr/tesseract.git
+        git clone https://github.com/tesseract-ocr/tesstrain
+
+    sudo cp ./fonts/*.ttf /usr/share/fonts
+    sudo cp ./fonts/*.ttc /usr/share/fonts
+    sudo fc-cache -f -v
 
 
 3. Prepare data for train
