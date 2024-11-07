@@ -1,7 +1,6 @@
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image, ImageDraw, ImageFont
-#from IPython.display import display
 import uuid
 import shutil
 import subprocess
@@ -44,7 +43,7 @@ font_size = 32
 # current_dir = os.path.dirname(os.path.abspath(__file__))
 # fonts_folder = os.path.abspath(os.path.join(current_dir, '..', '..', 'fonts'))
 # unicharset_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'langdata','eng.unicharset'))
-max_concurrent_tasks = 1#os.cpu_count()
+max_concurrent_tasks = os.cpu_count()
 
 def calculate_image_size(generated_str, font, start_x, start_y, spacing):
     global font_size
@@ -66,7 +65,7 @@ def calculate_image_size(generated_str, font, start_x, start_y, spacing):
         image_width = image_width + top_right[0] - top_left[0] + spacing
         image_height = max(image_height, bottom_left[1]-testbox_y)
 
-        print(f"{image_width}, {image_height}: {image_width} + {top_right[0]} - {top_left[0]} + {spacing}")
+        #print(f"{image_width}, {image_height}: {image_width} + {top_right[0]} - {top_left[0]} + {spacing}")
     return image_width+font_size+start_x, image_height+start_y+10
 
 def gen_images_by_pillow(task):
