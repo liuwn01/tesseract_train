@@ -43,7 +43,7 @@ errorFolder = f"{outputFolder}_E"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 fonts_folder = os.path.abspath(os.path.join(current_dir, '..', '..', 'fonts'))
 unicharset_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'langdata','eng.unicharset'))
-max_concurrent_tasks = os.cpu_count()
+max_concurrent_tasks = 1 #os.cpu_count(), Concurrent requests will result in files not being generated, waiting to be fixed
 
 def gen_images_by_tesstrainocr(task):
     file_prefix = task["file_prefix"]
@@ -83,7 +83,7 @@ def check_fonts_folder(fonts_folder):
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
         print(result.stdout, result.stderr)
-        time.sleep(10)
+        time.sleep(2)
     except Exception as e:
         print(f"Command {command} generated an exception: {e}")
 
