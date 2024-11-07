@@ -38,22 +38,11 @@ json_data = [
 ]
 
 number_of_generated = 1
-
 outputFolder = f"./output"
 errorFolder = f"{outputFolder}_E"
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 fonts_folder = os.path.abspath(os.path.join(current_dir, '..', '..', 'fonts'))
 unicharset_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'langdata','eng.unicharset'))
-
-if os.path.exists(outputFolder):
-    shutil.rmtree(outputFolder)
-os.makedirs(outputFolder, exist_ok=True)
-
-if os.path.exists(errorFolder):
-    shutil.rmtree(errorFolder)
-os.makedirs(errorFolder, exist_ok=True)
-
 max_concurrent_tasks = os.cpu_count()
 
 def gen_images_by_tesstrainocr(task):
@@ -63,13 +52,14 @@ def gen_images_by_tesstrainocr(task):
     fonts_folder = task["fonts_folder"]
     errorFolder = task["errorFolder"]
     generated_str = task["generated_str"]
+    target_font = task["target_font"]
 
     gt_file = f'{outputFolder}/{file_prefix}.gt.txt'
     with open(gt_file, 'w', newline='\n', encoding='utf-8') as f:
         f.write(generated_str)
 
     outputbase = gt_file.replace('.gt.txt', '')
-    command = f'text2image --font="{FONT_MAPPINT[TARGET_FONT]}" --text={gt_file} --outputbase={outputbase} --max_pages=1 --strip_unrenderable_words --leading=32 --xsize=3600 --ysize=480 --char_spacing=1.0 --exposure=0 --unicharset_file={unicharset_path} --fonts_dir={fonts_folder} --fontconfig_tmpdir={fonts_folder}'
+    command = f'text2image --font="{FONT_MAPPINT[target_font]}" --text={gt_file} --outputbase={outputbase} --max_pages=1 --strip_unrenderable_words --leading=32 --xsize=3600 --ysize=480 --char_spacing=1.0 --exposure=0 --unicharset_file={unicharset_path} --fonts_dir={fonts_folder} --fontconfig_tmpdir={fonts_folder}'
     print(command)
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -101,6 +91,15 @@ def check_fonts_folder(fonts_folder):
 #'text2image --fonts_dir <path_to_fonts_folder> --list_available_fonts --fontconfig_tmpdir <path_to_fonts_folder>'
 check_fonts_folder(fonts_folder) # If the <uuid>.cache-7 file does not exist in the fonts folder, image generation will fail.
 
+if os.path.exists(outputFolder):
+    shutil.rmtree(outputFolder)
+os.makedirs(outputFolder, exist_ok=True)
+
+if os.path.exists(errorFolder):
+    shutil.rmtree(errorFolder)
+os.makedirs(errorFolder, exist_ok=True)
+
+
 for fpathe,dirs,fs in os.walk('./ComplianceChars'):
     for f_name in fs:
         filepath=os.path.join(fpathe,f_name)
@@ -110,7 +109,7 @@ for fpathe,dirs,fs in os.walk('./ComplianceChars'):
                 txt_chars = inf.read().replace(" ","").replace('\n', '').replace('\r', '')
                 print(f_name,txt_chars)
 
-                TARGET_FONT = f_name.replace('.txt', '')
+                target_font = f_name.replace('.txt', '')
                 index=0
 
                 tasks = []
@@ -122,6 +121,7 @@ for fpathe,dirs,fs in os.walk('./ComplianceChars'):
                     file_prefix = f"{f_name.replace('.ttf', '').replace('.ttc', '').replace('.txt', '')}_{index}"
                     tasks.append(
                         {
+                            "target_font": target_font,
                             "generated_str": generated_str,
                             "file_prefix": file_prefix,
                             "outputFolder": outputFolder,
