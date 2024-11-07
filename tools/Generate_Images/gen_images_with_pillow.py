@@ -37,6 +37,8 @@ json_data = [
 ]
 
 number_of_generated = 1
+min_len_of_generated_str = 10
+max_len_of_generated_str = 30
 outputFolder = f"./output"
 errorFolder = f"{outputFolder}_E"
 font_size = 32
@@ -146,7 +148,7 @@ for fpathe,dirs,fs in os.walk('./ComplianceChars'):
                 tasks = []
 
                 for iterable_index, _ in enumerate(range(number_of_generated*len(txt_chars))):
-                    length = random.randint(10, 30)
+                    length = random.randint(min_len_of_generated_str, max_len_of_generated_str)
                     generated_str = txt_chars[iterable_index % len(txt_chars)] + ''.join(random.choice(txt_chars) for _ in range(length))
 
                     file_prefix = f"{f_name.replace('.ttf', '').replace('.ttc', '').replace('.txt', '')}_{index}"
