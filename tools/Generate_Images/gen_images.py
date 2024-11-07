@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image, ImageDraw, ImageFont
 #from IPython.display import display
 import uuid
@@ -6,6 +7,7 @@ import shutil
 import subprocess
 import os
 import random
+import time
 
 FONT_MAPPINT = {
     "simsunb.ttf": "SimSun-ExtB",
@@ -52,6 +54,53 @@ if os.path.exists(errorFolder):
     shutil.rmtree(errorFolder)
 os.makedirs(errorFolder, exist_ok=True)
 
+max_concurrent_tasks = os.cpu_count()
+
+def gen_images_by_tesstrainocr(task):
+    file_prefix = task["file_prefix"]
+    outputFolder = task["outputFolder"]
+    unicharset_path = task["unicharset_path"]
+    fonts_folder = task["fonts_folder"]
+    errorFolder = task["errorFolder"]
+    generated_str = task["generated_str"]
+
+    gt_file = f'{outputFolder}/{file_prefix}.gt.txt'
+    with open(gt_file, 'w', newline='\n', encoding='utf-8') as f:
+        f.write(generated_str)
+
+    outputbase = gt_file.replace('.gt.txt', '')
+    command = f'text2image --font="{FONT_MAPPINT[TARGET_FONT]}" --text={gt_file} --outputbase={outputbase} --max_pages=1 --strip_unrenderable_words --leading=32 --xsize=3600 --ysize=480 --char_spacing=1.0 --exposure=0 --unicharset_file={unicharset_path} --fonts_dir={fonts_folder} --fontconfig_tmpdir={fonts_folder}'
+    print(command)
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        print(result.stdout, result.stderr)
+    except Exception as e:
+        print(f"Command {command} generated an exception: {e}")
+
+    try:
+        box_path = f'{outputFolder}/{file_prefix}.box'
+        size = os.path.getsize(box_path)  # 文件路径及文件名
+        if size < 1:
+            shutil.move(box_path, errorFolder)
+            shutil.move(gt_file, errorFolder)
+            shutil.move(box_path.replace('.box', '.tif'), errorFolder)
+    except Exception as e:
+        print(f"Move file error: {box_path}")
+
+def check_fonts_folder(fonts_folder):
+    command = f'text2image --fonts_dir {fonts_folder} --list_available_fonts --fontconfig_tmpdir {fonts_folder}'
+    print(command)
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        print(result.stdout, result.stderr)
+        time.sleep(10)
+    except Exception as e:
+        print(f"Command {command} generated an exception: {e}")
+
+#recommended to manually run cmd before running this py
+#'text2image --fonts_dir <path_to_fonts_folder> --list_available_fonts --fontconfig_tmpdir <path_to_fonts_folder>'
+check_fonts_folder(fonts_folder) # If the <uuid>.cache-7 file does not exist in the fonts folder, image generation will fail.
+
 for fpathe,dirs,fs in os.walk('./ComplianceChars'):
     for f_name in fs:
         filepath=os.path.join(fpathe,f_name)
@@ -63,34 +112,30 @@ for fpathe,dirs,fs in os.walk('./ComplianceChars'):
 
                 TARGET_FONT = f_name.replace('.txt', '')
                 index=0
+
+                tasks = []
+
                 for iterable_index, _ in enumerate(range(number_of_generated*len(txt_chars))):
                     length = random.randint(10, 30)
                     generated_str = txt_chars[iterable_index % len(txt_chars)] + ''.join(random.choice(txt_chars) for _ in range(length))
-                    print(generated_str)
 
                     file_prefix = f"{f_name.replace('.ttf', '').replace('.ttc', '').replace('.txt', '')}_{index}"
+                    tasks.append(
+                        {
+                            "generated_str": generated_str,
+                            "file_prefix": file_prefix,
+                            "outputFolder": outputFolder,
+                            "unicharset_path": unicharset_path,
+                            "fonts_folder": fonts_folder,
+                            "errorFolder": errorFolder
+                        }
+                    )
+                    index += 1
 
-                    gt_file = f'{outputFolder}/{file_prefix}.gt.txt'
-                    with open(gt_file, 'w', newline='\n', encoding='utf-8') as f:
-                        f.write(generated_str)
+                with ThreadPoolExecutor(max_workers=max_concurrent_tasks) as executor:
+                    futures = [executor.submit(gen_images_by_tesstrainocr, item) for item in tasks]
 
-                    outputbase = gt_file.replace('.gt.txt', '')
-                    command = f'text2image --font="{FONT_MAPPINT[TARGET_FONT]}" --text={gt_file} --outputbase={outputbase} --max_pages=1 --strip_unrenderable_words --leading=32 --xsize=3600 --ysize=480 --char_spacing=1.0 --exposure=0 --unicharset_file={unicharset_path} --fonts_dir={fonts_folder} --fontconfig_tmpdir={fonts_folder}'
-                    #print(command)
-                    try:
-                        result = subprocess.run(command, shell=True, capture_output=True, text=True)
-                        print(result.stdout, result.stderr)
-                    except Exception as e:
-                        print(f"Command {command} generated an exception: {e}")
-
-                    try:
-                        box_path = f'{outputFolder}/{file_prefix}.box'
-                        size = os.path.getsize(box_path)  # 文件路径及文件名
-                        if size < 1:
-                            shutil.move(box_path, errorFolder)
-                            shutil.move(gt_file, errorFolder)
-                            shutil.move(box_path.replace('.box', '.tif'), errorFolder)
-                    except Exception as e:
-                        print(f"Move file error: {box_path}")
-
-                    index+=1
+                    for future in as_completed(futures):
+                        pass
+                        #result = future.result()
+                        #print(result)
