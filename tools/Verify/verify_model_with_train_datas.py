@@ -16,8 +16,8 @@ TXT_EVAL = "./list.eval"
 TXT_GT = "./all-gt"
 
 TEMP_FOLDER = "./temp"
-GROUPD_TRUTH_FOLDER = "./Apex-ground-truth"
-TESSERACT_LANG = "Apex"
+GROUPD_TRUTH_FOLDER = "./gb2-ground-truth"
+TESSERACT_LANG = "gb2"
 
 def check_string_in_text(file_path, target_string):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -45,40 +45,44 @@ def handle_tasks(task):
     gt_index_prefix = task["gt_index_prefix"]
     filepath = task["filepath"]
 
-    print(f"processing: {filepath}")
-    tesseract_parsed_string = image_to_string(filepath, TESSERACT_LANG)
-    gt_string = read_gt_file(f"{file_prefix}.gt.txt")
-    isInTrain = check_string_in_text(TXT_TRAIN, f"{gt_index_prefix}.lstmf")
-    isInEval = check_string_in_text(TXT_EVAL, f"{gt_index_prefix}.lstmf")
-    # print(gt_index_prefix,isInTrain,isInEval)
-    # print(gt_string, "|||", tesseract_parsed_string, SequenceMatcher(None, gt_string, tesseract_parsed_string).ratio())
-    isMatched = False
+    try:
+        print(f"processing: {file_prefix}")
+        tesseract_parsed_string = image_to_string(filepath, TESSERACT_LANG)
+        gt_string = read_gt_file(f"{file_prefix}.gt.txt")
+        isInTrain = check_string_in_text(TXT_TRAIN, f"{gt_index_prefix}.lstmf")
+        isInEval = check_string_in_text(TXT_EVAL, f"{gt_index_prefix}.lstmf")
+        # print(gt_index_prefix,isInTrain,isInEval)
+        # print(gt_string, "|||", tesseract_parsed_string, SequenceMatcher(None, gt_string, tesseract_parsed_string).ratio())
+        isMatched = False
 
-    ratio = SequenceMatcher(None, gt_string, tesseract_parsed_string).ratio()
-    if ratio > 0.9999 or gt_string == tesseract_parsed_string:
-        try:
-            isMatched = True
-            shutil.move(f"{file_prefix}.tif", f"{TEMP_FOLDER}/matched")
-            shutil.move(f"{file_prefix}.box", f"{TEMP_FOLDER}/matched")
-            shutil.move(f"{file_prefix}.gt.txt", f"{TEMP_FOLDER}/matched")
-        except Exception as e:
-            print(f"Move file error: {file_prefix}")
-    else:
-        try:
-            shutil.move(f"{file_prefix}.tif", f"{TEMP_FOLDER}/unmatched")
-            shutil.move(f"{file_prefix}.box", f"{TEMP_FOLDER}/unmatched")
-            shutil.move(f"{file_prefix}.gt.txt", f"{TEMP_FOLDER}/unmatched")
-        except Exception as e:
-            print(f"Move file error: {file_prefix}")
+        ratio = SequenceMatcher(None, gt_string, tesseract_parsed_string).ratio()
+        if ratio > 0.9999 or gt_string == tesseract_parsed_string:
+            try:
+                isMatched = True
+                shutil.move(f"{file_prefix}.tif", f"{TEMP_FOLDER}/matched")
+                shutil.move(f"{file_prefix}.box", f"{TEMP_FOLDER}/matched")
+                shutil.move(f"{file_prefix}.gt.txt", f"{TEMP_FOLDER}/matched")
+            except Exception as e:
+                print(f"Move file error: {file_prefix}")
+        else:
+            try:
+                shutil.move(f"{file_prefix}.tif", f"{TEMP_FOLDER}/unmatched")
+                shutil.move(f"{file_prefix}.box", f"{TEMP_FOLDER}/unmatched")
+                shutil.move(f"{file_prefix}.gt.txt", f"{TEMP_FOLDER}/unmatched")
+            except Exception as e:
+                print(f"Move file error: {file_prefix}")
 
-    with lock:
-        global total_items,error_items,result_file
-        total_items += 1
-        if not isMatched:
-            error_items += 1
-        result_file.write(f"{gt_index_prefix},{int(isMatched)},{ratio},{int(isInTrain)},{int(isInEval)},'{gt_string}','{tesseract_parsed_string}'\n")
-        result_file.flush()
-
+        with lock:
+            global total_items, error_items, result_file
+            total_items += 1
+            if not isMatched:
+                error_items += 1
+            result_file.write(
+                f"{gt_index_prefix},{int(isMatched)},{ratio},{int(isInTrain)},{int(isInEval)},'{gt_string}','{tesseract_parsed_string}'\n")
+            result_file.flush()
+    except Exception as e:
+        print(f"Failed to process '{file_prefix}': {e}")
+        raise e
 
 if os.path.exists(TEMP_FOLDER):
     shutil.rmtree(TEMP_FOLDER)
@@ -109,6 +113,7 @@ try:
                         "gt_index_prefix": gt_index_prefix
                     }
                 )
+                #handle_tasks(tasks[len(tasks)-1]) #for debugging
 
     with ThreadPoolExecutor(max_workers=max_concurrent_tasks) as executor:
         futures = [executor.submit(handle_tasks, item) for item in tasks]
