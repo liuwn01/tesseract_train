@@ -121,15 +121,9 @@ Releted Repos:
     #TBD
     cd ~/tesseract_train/tesstrain
     sudo cp data/gb1.traineddata /usr/share/tesseract-ocr/5/tessdata/
-    cp -r data/gb1-ground-truth ~/tesseract_train/tools/Verify/
-    cp data/gb1/list.train ~/tesseract_train/tools/Verify/
-    cp data/gb1/list.eval ~/tesseract_train/tools/Verify/
-    cp data/gb1/all-gt ~/tesseract_train/tools/Verify/
-
+    
     cd ~/tesseract_train/tools/Verify/
-    #change GROUPD_TRUTH_FOLDER = 'gb1-ground-truth', TESSERACT_LANG = 'gb1'
-    #pip install pytesseract
-    python verify_model_with_train_datas.py
+    python verify_model_with_train_datas.py --model gb1
     #check result.csv #gt_file_prefix,isMatched,ratio(String Similarity),isInListTrainFile,isInListEvalFile,gt_file_string,tesseract_parsed_string
 
 Others:
