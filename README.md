@@ -133,6 +133,13 @@ Others:
     #Unpack traineddata file
     combine_tessdata -u eng.traineddata ./eng
     combine_tessdata -u gb1.traineddata ./gb1
+
+    dawg2wordlist ./eng.lstm-unicharset ./eng.lstm-word-dawg ./eng.wordlist
+    dawg2wordlist ./eng.lstm-unicharset ./eng.lstm-number-dawg ./eng.numbers
+    dawg2wordlist ./eng.lstm-unicharset ./eng.lstm-punc-dawg ./eng.punc
+
+    find -L ./gb1-ground-truth -name '*.gt.txt' | xargs paste -s > ./gb1.wordlist
+    TESSDATA_PREFIX=../tesseract/tessdata make training MODEL_NAME=gb1 START_MODEL=eng TESSDATA=../tesseract/tessdata WORDLIST_FILE=./data/gb1.wordlist NUMBERS_FILE=./data/eng.numbers PUNC_FILE=./data/eng.punc MAX_ITERATIONS=10000 
 ```
 
 
