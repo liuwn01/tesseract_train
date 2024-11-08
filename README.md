@@ -83,19 +83,15 @@ Releted Repos:
         #only simsun.ttc.txt use for testing
         ls | grep -v simsun.ttc.txt | xargs rm
             #rollback of rm operation: git restore .
-        cd ..
-        python gen_images.py #Modify 'number_of_generated' to change the number of images generated
+        python ../gen_images.py #Modify 'number_of_generated' to change the number of images generated
         mkdir ~/tesseract_train/tesstrain/data
         #<model name what you want>-ground-truth, this testcase uses gb1
         mv ./output ~/tesseract_train/tesstrain/data/gb1-ground-truth
         
     #Method 2: Using Pillow
         #TBD
-        cd ~/tesseract_train/tools/Generate_Images/ComplianceChars
-        #only simsun.ttc.txt use for testing
-        ls | grep -v simsun.ttc.txt | xargs rm
-            #rollback of rm operation: git restore .
-        python gen_images_with_pillow.py
+        cd ~/tesseract_train/tools/Generate_Images
+        python gen_images_with_pillow.py --count 1 --txts simsun.ttc.txt --minlen 5 --maxlen 20 --fontsize 32
         mkdir ~/tesseract_train/tesstrain/data
         #<model name what you want>-ground-truth, this testcase uses gb1
         mv ./output ~/tesseract_train/tesstrain/data/gb1-ground-truth
@@ -135,8 +131,8 @@ Others:
     #Error rate reference: BCER train=61.069000%
     
     #Unpack traineddata file
-    combine_tessdata -u eng.traineddata ./eng/eng
-    combine_tessdata -u gb1.traineddata ./Apex/gb1
+    combine_tessdata -u eng.traineddata ./eng
+    combine_tessdata -u gb1.traineddata ./gb1
 ```
 
 

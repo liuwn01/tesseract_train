@@ -7,6 +7,7 @@ import subprocess
 import os
 import random
 import time
+import argparse
 
 FONT_MAPPINT = {
     "simsunb.ttf": "SimSun-ExtB",
@@ -36,26 +37,16 @@ json_data = [
     "taile.ttf"
 ]
 
-number_of_generated = 1
-min_len_of_generated_str = 10
-max_len_of_generated_str = 30
-outputFolder = f"./output"
-errorFolder = f"{outputFolder}_E"
-font_size = 32
-# current_dir = os.path.dirname(os.path.abspath(__file__))
-# fonts_folder = os.path.abspath(os.path.join(current_dir, '..', '..', 'fonts'))
-# unicharset_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'langdata','eng.unicharset'))
-max_concurrent_tasks = os.cpu_count()
 
-def calculate_image_size(generated_str, font, start_x, start_y, spacing):
-    global font_size
+def calculate_image_size(generated_str, target_font, start_x, start_y, spacing):
+    global FONT_SIZE
     image_width = 0
     image_height = 0
 
     for char in generated_str:
-        image = Image.new("RGB", (100 * font_size, 100 * font_size), "white")
+        image = Image.new("RGB", (100 * FONT_SIZE, 100 * FONT_SIZE), "white")
         draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype(target_font, font_size)
+        font = ImageFont.truetype(target_font, FONT_SIZE)
         # 计算字符的边界框
         testbox_x, testbox_y = 1, 1
         bbox = draw.textbbox((testbox_x, testbox_y), char, font=font)
@@ -68,10 +59,10 @@ def calculate_image_size(generated_str, font, start_x, start_y, spacing):
         image_height = max(image_height, bottom_left[1]-testbox_y)
 
         #print(f"{image_width}, {image_height}: {image_width} + {top_right[0]} - {top_left[0]} + {spacing}")
-    return image_width+font_size+start_x, image_height+start_y+10
+    return image_width+FONT_SIZE+start_x, image_height+start_y+10
 
 def gen_images_by_pillow(task):
-    global font_size
+    global FONT_SIZE
     file_prefix = task["file_prefix"]
     outputFolder = task["outputFolder"]
     generated_str = task["generated_str"]
@@ -79,7 +70,7 @@ def gen_images_by_pillow(task):
 
     start_x, start_y = 1, 10
     spacing = 1
-    #image_width = font_size * len(generated_str)
+    #image_width = FONT_SIZE * len(generated_str)
     #image_height = 480
     image_width, image_height = calculate_image_size(generated_str, target_font, start_x, start_y, spacing)
 
@@ -88,7 +79,7 @@ def gen_images_by_pillow(task):
     box_positions = []
 
     for char in generated_str:
-        font = ImageFont.truetype(target_font, font_size)
+        font = ImageFont.truetype(target_font, FONT_SIZE)
 
         # 计算字符的边界框
         bbox = draw.textbbox((start_x, start_y), char, font=font)
@@ -124,51 +115,86 @@ def gen_images_by_pillow(task):
     except Exception as e:
         print(f"Failed to generate image '{outputFolder}/{file_prefix}.tif'")
 
-if os.path.exists(outputFolder):
-    shutil.rmtree(outputFolder)
-os.makedirs(outputFolder, exist_ok=True)
+NUMBER_OF_GENERATED = 1
+MIN_LEN_OF_GENERATE_STR = 10
+MAX_LEN_OF_GENERATE_STR = 30
+outputFolder = f"./output"
+errorFolder = f"{outputFolder}_E"
+FONT_SIZE = 32
+max_concurrent_tasks = os.cpu_count()
 
-if os.path.exists(errorFolder):
-    shutil.rmtree(errorFolder)
-os.makedirs(errorFolder, exist_ok=True)
+def main(args):
+    global NUMBER_OF_GENERATED,MIN_LEN_OF_GENERATE_STR,MAX_LEN_OF_GENERATE_STR,FONT_SIZE,outputFolder,errorFolder
+
+    if os.path.exists(outputFolder):
+        shutil.rmtree(outputFolder)
+    os.makedirs(outputFolder, exist_ok=True)
+
+    if os.path.exists(errorFolder):
+        shutil.rmtree(errorFolder)
+    os.makedirs(errorFolder, exist_ok=True)
+
+    NUMBER_OF_GENERATED = args.count
+    MIN_LEN_OF_GENERATE_STR = args.minlen
+    MAX_LEN_OF_GENERATE_STR = args.maxlen
+    FONT_SIZE = args.fontsize
+
+    target_items = [item.strip() for item in args.txts.split(";") if item.strip()]
 
 
-for fpathe,dirs,fs in os.walk('./ComplianceChars'):
-    for f_name in fs:
-        filepath=os.path.join(fpathe,f_name)
-        print(f"{fpathe} ==> {f_name}")
-        if filepath.endswith('.txt'):
-            with open(filepath, 'r', encoding="utf-8") as inf:
-                txt_chars = inf.read().replace(" ","").replace('\n', '').replace('\r', '')
-                print(f_name,txt_chars)
+    for fpathe,dirs,fs in os.walk('./ComplianceChars'):
+        for f_name in fs:
+            if len(target_items) > 0 and not any(map(lambda x: x.lower() == f_name.lower(), target_items)):
+                continue
+            filepath=os.path.join(fpathe,f_name)
+            print(f"{fpathe} ==> {f_name}")
+            if filepath.endswith('.txt'):
+                with open(filepath, 'r', encoding="utf-8") as inf:
+                    txt_chars = inf.read().replace(" ","").replace('\n', '').replace('\r', '')
+                    print(f_name,txt_chars)
 
-                target_font = f_name.replace('.txt', '')
-                index=0
+                    target_font = f_name.replace('.txt', '')
+                    index=0
 
-                tasks = []
+                    tasks = []
 
-                for iterable_index, _ in enumerate(range(number_of_generated*len(txt_chars))):
-                    length = random.randint(min_len_of_generated_str, max_len_of_generated_str)
-                    generated_str = txt_chars[iterable_index % len(txt_chars)] + ''.join(random.choice(txt_chars) for _ in range(length))
+                    for iterable_index, _ in enumerate(range(NUMBER_OF_GENERATED*len(txt_chars))):
+                        length = random.randint(MIN_LEN_OF_GENERATE_STR, MAX_LEN_OF_GENERATE_STR)
+                        generated_str = txt_chars[iterable_index % len(txt_chars)] + ''.join(random.choice(txt_chars) for _ in range(length))
 
-                    file_prefix = f"{f_name.replace('.ttf', '').replace('.ttc', '').replace('.txt', '')}_{index}"
-                    tasks.append(
-                        {
-                            "target_font": target_font,
-                            "generated_str": generated_str,
-                            "file_prefix": file_prefix,
-                            "outputFolder": outputFolder,
-                            # "unicharset_path": unicharset_path,
-                            # "fonts_folder": fonts_folder,
-                            "errorFolder": errorFolder
-                        }
-                    )
-                    index += 1
+                        file_prefix = f"{f_name.replace('.ttf', '').replace('.ttc', '').replace('.txt', '')}_{index}"
+                        tasks.append(
+                            {
+                                "target_font": target_font,
+                                "generated_str": generated_str,
+                                "file_prefix": file_prefix,
+                                "outputFolder": outputFolder,
+                                # "unicharset_path": unicharset_path,
+                                # "fonts_folder": fonts_folder,
+                                "errorFolder": errorFolder
+                            }
+                        )
+                        index += 1
 
-                with ThreadPoolExecutor(max_workers=max_concurrent_tasks) as executor:
-                    futures = [executor.submit(gen_images_by_pillow, item) for item in tasks]
+                    with ThreadPoolExecutor(max_workers=max_concurrent_tasks) as executor:
+                        futures = [executor.submit(gen_images_by_pillow, item) for item in tasks]
 
-                    for future in as_completed(futures):
-                        pass
-                        #result = future.result()
-                        #print(result)
+                        for future in as_completed(futures):
+                            pass
+                            #result = future.result()
+                            #print(result)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="verify traineddata with train datas")
+
+    parser.add_argument("--count", type=int, default=1, help="number of image generate")
+    parser.add_argument("--txts", type=str, default="", help="simsun.ttc.txt;simsunb.ttf.txt")
+    parser.add_argument("--minlen", type=int, default=10, help="min length of generate string")
+    parser.add_argument("--maxlen", type=int, default=20, help="max length of generate string")
+    parser.add_argument("--fontsize", type=int, default=32, help="font size")
+    #parser.add_argument("--moveto", type=str, default="", help="font size")
+
+    args = parser.parse_args()
+    main(args)
+
+#python gen_images_with_pillow.py --count 1 --txts simsun.ttc.txt --minlen 5 --maxlen 20 --fontsize 32

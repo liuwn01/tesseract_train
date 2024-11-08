@@ -168,7 +168,6 @@ if __name__ == "__main__":
     parser.add_argument("--dataroot", type=str, default="../../tesstrain/data", help="where is tesstrain/data folder")
     parser.add_argument("--rebuildcsv", type=int, default=0, help="Whether to regenerate Result.csv")
 
-    # 解析参数
     args = parser.parse_args()
     main(args)
 
