@@ -139,7 +139,14 @@ Others:
     dawg2wordlist ./eng.lstm-unicharset ./eng.lstm-punc-dawg ./eng.punc
 
     find -L ./gb1-ground-truth -name '*.gt.txt' | xargs paste -s > ./gb1.wordlist
-    TESSDATA_PREFIX=../tesseract/tessdata make training MODEL_NAME=gb1 START_MODEL=eng TESSDATA=../tesseract/tessdata WORDLIST_FILE=./data/gb1.wordlist NUMBERS_FILE=./data/eng.numbers PUNC_FILE=./data/eng.punc MAX_ITERATIONS=10000 
+    TESSDATA_PREFIX=../tesseract/tessdata make training MODEL_NAME=gb1 START_MODEL=eng TESSDATA=../tesseract/tessdata WORDLIST_FILE=./data/gb1.wordlist NUMBERS_FILE=./data/eng.numbers PUNC_FILE=./data/eng.punc MAX_ITERATIONS=10000
+
+    cp ./data/gb1/list.eval ./data/gb1_list_eval 
+    shuf -n 70000 ./data/gb1/list.train -o ./data/gb1train.txt
+    cat ./data/gb1train.txt >> ./data/gb1/list.eval
+
+    ll ../../tools/others/output | grep "^-" | wc -l 
+
 ```
 
 

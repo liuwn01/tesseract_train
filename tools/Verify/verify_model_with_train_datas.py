@@ -127,7 +127,9 @@ def main(args):
     copy_file(os.path.join(tesstrain_data_root, f"{TESSERACT_LANG}/{TXT_TRAIN}"), "./")
     copy_file(os.path.join(tesstrain_data_root, f"{TESSERACT_LANG}/{TXT_EVAL}"), "./")
     copy_file(os.path.join(tesstrain_data_root, f"{TESSERACT_LANG}/{TXT_GT}"), "./")
-    copy_directory(os.path.join(tesstrain_data_root, f"{GROUPD_TRUTH_FOLDER}"), f"./{GROUPD_TRUTH_FOLDER}")
+
+    if not os.path.exists(f"./{GROUPD_TRUTH_FOLDER}") or bool(REBUILDCSV):
+        copy_directory(os.path.join(tesstrain_data_root, f"{GROUPD_TRUTH_FOLDER}"), f"./{GROUPD_TRUTH_FOLDER}")
 
     try:
         result_file = get_result_file("./result.csv")
