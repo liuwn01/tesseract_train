@@ -81,11 +81,15 @@ def load_except_chars_json(json_file_path):
 def find_character_value(data, character):
     return next((v for k, v in data.items() if character in k), character)
 
+def clean_str(s):
+    if s:
+        return str(s).replace(' ','').replace('᠎','').replace('\t','').replace('\r','').replace('\n','')
+
 def gen_images_by_pillow(task):
     global FONT_SIZE, EXCEPT_CHARS_MAPPINT,FONT_MAPPINT
     file_prefix = task["file_prefix"]
     outputFolder = task["outputFolder"]
-    generated_str = task["generated_str"]
+    generated_str = clean_str(task["generated_str"])
     target_font = task["target_font"]
 
     start_x, start_y = 1, 10
