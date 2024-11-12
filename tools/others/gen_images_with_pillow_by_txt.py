@@ -178,7 +178,7 @@ EXCEPT_CHARS_MAPPINT = None
 FONT_MAPPINT = loadFontMap()
 
 def main(args):
-    global NUMBER_OF_GENERATED,FONT_SIZE,outputFolder,errorFolder,FONT,MODEL_NAME, max_concurrent_tasks,EXCEPT_CHARS_MAPPINT
+    global NUMBER_OF_GENERATED,FONT_SIZE,outputFolder,errorFolder,FONT,MODEL_NAME, max_concurrent_tasks,EXCEPT_CHARS_MAPPINT,INDEX
 
     if os.path.exists(outputFolder):
         shutil.rmtree(outputFolder)
@@ -193,13 +193,13 @@ def main(args):
     FONT_SIZE = args.fontsize
     MODEL_NAME = args.model
 
-    start_index = max(args.start,0)
-    NUMBER_OF_GENERATED = args.count - start_index
+    INDEX = start_index = max(args.start,0)
+    NUMBER_OF_GENERATED = args.count
     if args.start < 1:
         max_concurrent_tasks = os.cpu_count()
     else:
         max_concurrent_tasks = args.cc
-    INDEX = 0
+
     EXCEPT_CHARS_MAPPINT = load_except_chars_json('./exception_chars_replacement.json')
 
     target_items = [item.strip() for item in args.txts.split(";") if item.strip()]
