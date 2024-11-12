@@ -113,6 +113,11 @@ Releted Repos:
 
         #After training is completed, gb1.traineddata will be saved in the ./data
 
+        #At iteration 14615/695400/698614, Mean rms=0.131000%, delta=0.038000%, BCER train=0.207000%, BWER train=0.579000%, skip ratio=0.4%,  wrote checkpoint.
+            14615 : learning_iteration #learning_iteration_ is used to measure rate of learning progress. So it uses the delta value to assess it the iteration has been useful.
+            695400 : training_iteration #It is how many times a training file has been SUCCESSFULLY passed into the learning process. Actually you have 1 - (695400 / 698614) = 0.4% which is the skip ratio : proportion of files that have been skipped because of an error
+            698614 : sample_iteration #“Index into training sample set. (sample_iteration >= training_iteration).” It is how many times a training file has been passed into the learning process.
+
 5.Verify
     #TBD
     cd ~/tesseract_train/tesstrain
@@ -146,6 +151,9 @@ Others:
     cat ./data/gb1train.txt >> ./data/gb1/list.eval
 
     ll ../../tools/others/output | grep "^-" | wc -l 
+
+    $(info $(NORM_MODE) $(GENERATE_BOX_SCRIPT))
+    $(error Exiting Makefile execution)
 
 ```
 

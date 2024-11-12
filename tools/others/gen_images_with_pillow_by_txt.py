@@ -143,7 +143,7 @@ FONT_SIZE = 32
 FONT=None
 MODEL_NAME=None
 INDEX = 0
-max_concurrent_tasks = os.cpu_count()
+max_concurrent_tasks = 2#os.cpu_count()
 lock = Lock()
 
 def main(args):
@@ -157,10 +157,13 @@ def main(args):
         shutil.rmtree(errorFolder)
     os.makedirs(errorFolder, exist_ok=True)
 
-    NUMBER_OF_GENERATED = args.count
+
     FONT = args.font
     FONT_SIZE = args.fontsize
     MODEL_NAME = args.model
+    start_index = max(args.start,0)
+    NUMBER_OF_GENERATED = args.count - start_index
+    max_concurrent_tasks = args.cc
     INDEX = 0
 
     target_items = [item.strip() for item in args.txts.split(";") if item.strip()]
@@ -176,6 +179,8 @@ def main(args):
         with ThreadPoolExecutor(max_workers=max_concurrent_tasks) as executor:
             # Loop over the lines and submit them in batches
             for enum_index,line in enumerate(read_file_yield(f)):
+                if enum_index < start_index:
+                    continue
                 if enum_index >= NUMBER_OF_GENERATED:
                     print("Reached the maximum number of executions. Exiting.")
                     break
@@ -211,6 +216,8 @@ if __name__ == "__main__":
     parser.add_argument("--fontsize", type=int, default=32, help="font size")
     parser.add_argument("--font", type=str, default="simsun.ttc", help="font")
     parser.add_argument("--model", type=str, default="gb5", help="font")
+    parser.add_argument("--start", type=int, default=0, help="")
+    parser.add_argument("--cc", type=int, default=2, help="")
 
     args = parser.parse_args()
     main(args)
