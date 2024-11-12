@@ -2,13 +2,14 @@ import argparse
 import re
 import os
 import random
+import json
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process text with filters and sliding windows.")
     parser.add_argument("-sourcetxt", type=str, default="testdata-utf8.txt" ,required=False, help="Path to source text file.")
     parser.add_argument("-filtertxt", type=str, default="", help="Path to filter text file.")
     parser.add_argument("-slides", type=str, required=False, default="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16", help="Comma-separated slide lengths, e.g., '1,2,3,4,5'")
-    parser.add_argument("-leng", type=int, required=False, default="1000", help="Length of text to generate.")
+    parser.add_argument("-leng", type=int, required=False, default="2000000", help="Length of text to generate.")
     parser.add_argument("-model", type=str, required=False, default="gb6", help="Model name to save results.")
     return parser.parse_args()
 #return ''.join([char if char in filtertxt or char in '\r\n' or char in '\r' or char in '\n' else '' for char in sourcetxt])
@@ -83,6 +84,13 @@ def generate_random_strings(wordlist, count, min_length=10, max_length=30, ratio
     random.shuffle(random_strings)
     return random_strings
 
+def load_except_chars_json(json_file_path):
+    try:
+        with open(json_file_path, 'r', encoding='utf-8') as f:
+            return json.loads(f.read())
+    except json.JSONDecodeError:
+        raise Exception(f"Failed to load {json_file_path}")
+
 EXCEPT_CHARS = ['�','⍰']
 
 def main():
@@ -116,7 +124,11 @@ def main():
     # Write the result to the model-specific output file
     output_file = f"{args.model}.wordlist"
     with open(output_file, 'w', encoding='utf-8') as file:
-        file.write('\n'.join(wordlist))
+        EXCEPT_CHARS_MAPPINT = load_except_chars_json('./exception_chars_replacement.json')
+        wl = '\n'.join(wordlist)
+        for ec in EXCEPT_CHARS:
+            wl = wl.replace(ec, EXCEPT_CHARS_MAPPINT[ec])
+        file.write(wl)
 
     print(f"Word list generated and saved to {output_file}")
 
