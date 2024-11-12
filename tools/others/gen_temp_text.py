@@ -13,6 +13,27 @@ def parse_arguments():
     return parser.parse_args()
 #return ''.join([char if char in filtertxt or char in '\r\n' or char in '\r' or char in '\n' else '' for char in sourcetxt])
 
+def generate_text_with_except_chars(source_txt, additional_chars, min_repeats=1, max_repeats=5, num_versions_per_char=5):
+    lines = source_txt.strip().splitlines()
+
+    all_versions = []
+
+    for additional_char in additional_chars:
+        for version_num in range(num_versions_per_char):
+            text_version = []
+            for line in lines:
+                new_line = []
+                for char in line:
+                    new_line.append(char)
+                    new_line.append(additional_char * (version_num+1))
+
+                text_version.append("".join(new_line))
+
+            all_versions.append('\n'.join(text_version))
+
+    return all_versions
+
+
 def read_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as file:
         return file.read()
@@ -38,16 +59,34 @@ def create_word_list(sourcetxt, slides):
                 pos += 1  # Move one character over for sliding effect
     return list(set(wordlist))
 
-def generate_random_strings(wordlist, count, min_length=10, max_length=30):
+def generate_random_strings(wordlist, count, min_length=10, max_length=30, ratio_normal=0.5):
+    global EXCEPT_CHARS
     random_strings = []
-    for _ in range(count):
+    normal_count = count * ratio_normal
+    normal_wordlist = []
+    exception_wordlist = []
+    for substr in wordlist:
+        if any(substring in EXCEPT_CHARS for substring in substr):
+            exception_wordlist.append(substr)
+        else:
+            normal_wordlist.append(substr)
+
+    for index, _ in enumerate(range(count)):
         current_string = ""
         while len(current_string) < random.randint(min_length, max_length):
-            current_string += random.choice(wordlist)
+            if index <= normal_count:
+                current_string += random.choice(normal_wordlist)
+            else:
+                current_string += random.choice(exception_wordlist)
         random_strings.append(current_string[:max_length])  # Trim if it exceeds max_length
+
+    random.shuffle(random_strings)
     return random_strings
 
+EXCEPT_CHARS = ['�','⍰']
+
 def main():
+    global EXCEPT_CHARS
     args = parse_arguments()
 
     # Read the source text
@@ -59,9 +98,16 @@ def main():
     # Filter source text
     filtered_text = filter_source_text(sourcetxt, filtertxt)
 
+    # Add except chars
+    temp_txt_list = generate_text_with_except_chars(filtered_text, EXCEPT_CHARS)
+    temp_txt_list.append(filtered_text)
+
     # Write filtered text to temp.txt
     with open('temp.txt', 'w', encoding='utf-8') as temp_file:
-        temp_file.write(filtered_text)
+        temp_file.write('\n'.join(temp_txt_list))
+
+    with open('temp.txt', 'r', encoding='utf-8') as temp_file:
+        filtered_text = temp_file.read()
 
     # Parse slides and generate word list
     slides = [int(x.strip()) for x in args.slides.split(',')]
