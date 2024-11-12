@@ -41,14 +41,15 @@ json_data = [
 
 
 def calculate_image_size(generated_str, target_font, start_x, start_y, spacing):
-    global FONT_SIZE
+    global FONT_SIZE, FONT_MAPPINT
     image_width = 0
     image_height = 0
 
     for char in generated_str:
         image = Image.new("RGB", (100 * FONT_SIZE, 100 * FONT_SIZE), "white")
         draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype(target_font, FONT_SIZE)
+        mapping_font = FONT_MAPPINT.get(char, "arial.ttf")
+        font = ImageFont.truetype(mapping_font, FONT_SIZE)
         # 计算字符的边界框
         testbox_x, testbox_y = 1, 1
         bbox = draw.textbbox((testbox_x, testbox_y), char, font=font)
@@ -63,8 +64,25 @@ def calculate_image_size(generated_str, target_font, start_x, start_y, spacing):
         #print(f"{image_width}, {image_height}: {image_width} + {top_right[0]} - {top_left[0]} + {spacing}")
     return image_width+FONT_SIZE+start_x, image_height+start_y+10
 
+def loadFontMap():
+    with open('./CharFontMapping.json', 'r', encoding='utf8') as user_file:
+        file_contents = user_file.read()
+        # print(file_contents)
+        parsed_json = json.loads(file_contents)
+        return parsed_json
+
+def load_except_chars_json(json_file_path):
+    try:
+        with open(json_file_path, 'r', encoding='utf-8') as f:
+            return json.loads(f.read())
+    except json.JSONDecodeError:
+        raise Exception(f"Failed to load {json_file_path}")
+
+def find_character_value(data, character):
+    return next((v for k, v in data.items() if character in k), character)
+
 def gen_images_by_pillow(task):
-    global FONT_SIZE
+    global FONT_SIZE, EXCEPT_CHARS_MAPPINT,FONT_MAPPINT
     file_prefix = task["file_prefix"]
     outputFolder = task["outputFolder"]
     generated_str = task["generated_str"]
@@ -79,9 +97,13 @@ def gen_images_by_pillow(task):
     image = Image.new("RGB", (image_width, image_height), "white")
     draw = ImageDraw.Draw(image)
     box_positions = []
+    gt_txts = []
 
     for char in generated_str:
+        target_font = FONT_MAPPINT.get(char, "arial.ttf")
         font = ImageFont.truetype(target_font, FONT_SIZE)
+        gt_char = find_character_value(EXCEPT_CHARS_MAPPINT, char)
+        gt_txts.append(gt_char)
 
         # 计算字符的边界框
         bbox = draw.textbbox((start_x, start_y), char, font=font)
@@ -96,7 +118,8 @@ def gen_images_by_pillow(task):
         y0 = image_height - bottom_left[1]
         x1 = top_right[0]
         y1 = image_height - top_right[1]
-        box_positions.append(f"{char} {x0} {y0} {x1} {y1} 0\n")
+        #box_positions.append(f"{char} {x0} {y0} {x1} {y1} 0\n")
+        box_positions.append(f"{gt_char} {x0} {y0} {x1} {y1} 0\n")
 
         # 在图片上绘制字符
         draw.text((start_x, start_y), char, font=font, fill="black")
@@ -111,7 +134,8 @@ def gen_images_by_pillow(task):
 
         gt_file = f'{outputFolder}/{file_prefix}.gt.txt'
         with open(gt_file, 'w', newline='\n', encoding='utf-8') as f:
-            f.write(generated_str)
+            #f.write(generated_str)
+            f.write(''.join(gt_txts))
 
         image.save(f"{outputFolder}/{file_prefix}.tif", format='TIFF')
     except Exception as e:
@@ -135,6 +159,7 @@ def process_line(line):
                     "errorFolder": errorFolder
                 }
     gen_images_by_pillow(data)
+    return data["file_prefix"]
 
 NUMBER_OF_GENERATED = 1
 outputFolder = f"./output"
@@ -145,9 +170,11 @@ MODEL_NAME=None
 INDEX = 0
 max_concurrent_tasks = 2#os.cpu_count()
 lock = Lock()
+EXCEPT_CHARS_MAPPINT = None
+FONT_MAPPINT = loadFontMap()
 
 def main(args):
-    global NUMBER_OF_GENERATED,FONT_SIZE,outputFolder,errorFolder,FONT,MODEL_NAME, max_concurrent_tasks
+    global NUMBER_OF_GENERATED,FONT_SIZE,outputFolder,errorFolder,FONT,MODEL_NAME, max_concurrent_tasks,EXCEPT_CHARS_MAPPINT
 
     if os.path.exists(outputFolder):
         shutil.rmtree(outputFolder)
@@ -161,10 +188,15 @@ def main(args):
     FONT = args.font
     FONT_SIZE = args.fontsize
     MODEL_NAME = args.model
+
     start_index = max(args.start,0)
     NUMBER_OF_GENERATED = args.count - start_index
-    max_concurrent_tasks = args.cc
+    if args.start < 1:
+        max_concurrent_tasks = os.cpu_count()
+    else:
+        max_concurrent_tasks = args.cc
     INDEX = 0
+    EXCEPT_CHARS_MAPPINT = load_except_chars_json('./exception_chars_replacement.json')
 
     target_items = [item.strip() for item in args.txts.split(";") if item.strip()]
 
@@ -212,12 +244,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="verify traineddata with train datas")
 
     parser.add_argument("--count", type=int, default=100, help="number of image generate")
-    parser.add_argument("--txts", type=str, default="gb5.txt", help="simsun.ttc.txt;simsunb.ttf.txt")
+    parser.add_argument("--txts", type=str, default="gb6.txt", help="simsun.ttc.txt;simsunb.ttf.txt")
     parser.add_argument("--fontsize", type=int, default=32, help="font size")
-    parser.add_argument("--font", type=str, default="simsun.ttc", help="font")
-    parser.add_argument("--model", type=str, default="gb5", help="font")
+    parser.add_argument("--font", type=str, default="", help="font")
+    parser.add_argument("--model", type=str, default="gb6", help="font")
     parser.add_argument("--start", type=int, default=0, help="")
-    parser.add_argument("--cc", type=int, default=2, help="")
+    parser.add_argument("--cc", type=int, default=0, help="")
 
     args = parser.parse_args()
     main(args)

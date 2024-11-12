@@ -6,10 +6,10 @@ import random
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process text with filters and sliding windows.")
     parser.add_argument("-sourcetxt", type=str, default="testdata-utf8.txt" ,required=False, help="Path to source text file.")
-    parser.add_argument("-filtertxt", type=str, default="simsun.ttc.txt", help="Path to filter text file.")
-    parser.add_argument("-slides", type=str, required=False, default="1,2,3,5,7,9,10,12", help="Comma-separated slide lengths, e.g., '1,2,3,4,5'")
-    parser.add_argument("-leng", type=int, required=False, default="10000000", help="Length of text to generate.")
-    parser.add_argument("-model", type=str, required=False, default="gb5", help="Model name to save results.")
+    parser.add_argument("-filtertxt", type=str, default="", help="Path to filter text file.")
+    parser.add_argument("-slides", type=str, required=False, default="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16", help="Comma-separated slide lengths, e.g., '1,2,3,4,5'")
+    parser.add_argument("-leng", type=int, required=False, default="1000", help="Length of text to generate.")
+    parser.add_argument("-model", type=str, required=False, default="gb6", help="Model name to save results.")
     return parser.parse_args()
 #return ''.join([char if char in filtertxt or char in '\r\n' or char in '\r' or char in '\n' else '' for char in sourcetxt])
 
@@ -38,7 +38,7 @@ def create_word_list(sourcetxt, slides):
                 pos += 1  # Move one character over for sliding effect
     return list(set(wordlist))
 
-def generate_random_strings(wordlist, count, min_length=10, max_length=20):
+def generate_random_strings(wordlist, count, min_length=10, max_length=30):
     random_strings = []
     for _ in range(count):
         current_string = ""
